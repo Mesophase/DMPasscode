@@ -11,6 +11,9 @@
 #import "DMPasscodeConfig.h"
 
 typedef void (^PasscodeCompletionBlock)(BOOL success);
+typedef void (^PasscodeVerificationCompletionBlock)(BOOL verified);
+typedef void (^PasscodeVerificationFatalErrorBlock)(void);
+typedef void (^PasscodeVerificationBlock)(NSString *codeToVerify, PasscodeVerificationCompletionBlock completionBlock, PasscodeVerificationFatalErrorBlock fatalErrorBlock);
 
 /**
  *  The passcode screen has to be manually opened. You decide when it should be presented.
@@ -34,7 +37,7 @@ typedef void (^PasscodeCompletionBlock)(BOOL success);
  *  @param viewController The view controller in which the passcode screen will be presented
  *  @param completion     The completion block with a BOOL to inidcate if the authentication was successfull
  */
-+ (void)showPasscodeInViewController:(UIViewController *)viewController completion:(PasscodeCompletionBlock)completion;
++ (void)showPasscodeInViewController:(UIViewController *)viewController withVerification:(PasscodeVerificationBlock)verification completion:(PasscodeCompletionBlock)completion;
 
 /**
  *  Remove the passcode from the keychain.
@@ -47,6 +50,13 @@ typedef void (^PasscodeCompletionBlock)(BOOL success);
  *  @return BOOL indicating if a passcode is set
  */
 + (BOOL)isPasscodeSet;
+
+/**
+ *  Get the passcode.
+ *
+ *  @return NSString* of the passcode if it is set, otherwise nil.
+ */
++ (NSString *)getPasscode;
 
 /**
  *  Set a configuration.

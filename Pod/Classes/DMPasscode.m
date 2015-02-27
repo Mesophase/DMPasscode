@@ -14,6 +14,7 @@
 #ifdef __IPHONE_8_0
 #import <LocalAuthentication/LocalAuthentication.h>
 #endif
+#import <MBProgressHUD/MBProgressHUD.h>
 
 #undef NSLocalizedString
 #define NSLocalizedString(key, comment) \
@@ -28,6 +29,7 @@ static NSBundle* bundle;
 
 @implementation DMPasscode {
     PasscodeCompletionBlock _completion;
+    PasscodeVerificationBlock _verification;
     DMPasscodeInternalViewController* _passcodeViewController;
     int _mode; // 0 = setup, 1 = input
     int _count;
@@ -62,8 +64,8 @@ static NSBundle* bundle;
     [instance setupPasscodeInViewController:viewController completion:completion];
 }
 
-+ (void)showPasscodeInViewController:(UIViewController *)viewController completion:(PasscodeCompletionBlock)completion {
-    [instance showPasscodeInViewController:viewController completion:completion];
++ (void)showPasscodeInViewController:(UIViewController *)viewController withVerification:(PasscodeVerificationBlock)verification completion:(PasscodeCompletionBlock)completion {
+    [instance showPasscodeInViewController:viewController withVerification:verification completion:completion];
 }
 
 + (void)removePasscode {
@@ -74,6 +76,10 @@ static NSBundle* bundle;
     return [instance isPasscodeSet];
 }
 
++ (NSString *)getPasscode {
+    return [instance getPasscode];
+}
+
 + (void)setConfig:(DMPasscodeConfig *)config {
     [instance setConfig:config];
 }
@@ -81,39 +87,41 @@ static NSBundle* bundle;
 #pragma mark - Instance methods
 - (void)setupPasscodeInViewController:(UIViewController *)viewController completion:(PasscodeCompletionBlock)completion {
     _completion = completion;
+    _verification = nil;
     [self openPasscodeWithMode:0 viewController:viewController];
 }
 
-- (void)showPasscodeInViewController:(UIViewController *)viewController completion:(PasscodeCompletionBlock)completion {
+- (void)showPasscodeInViewController:(UIViewController *)viewController withVerification:(PasscodeVerificationBlock)verification completion:(PasscodeCompletionBlock)completion {
     NSAssert([self isPasscodeSet], @"No passcode set");
     _completion = completion;
-    LAContext* context = [[LAContext alloc] init];
-    if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:nil]) {
-        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics localizedReason:NSLocalizedString(@"dmpasscode_touchid_reason", nil) reply:^(BOOL success, NSError* error) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (error) {
-                    switch (error.code) {
-                        case LAErrorUserCancel:
-                        case LAErrorSystemCancel:
-                        case LAErrorAuthenticationFailed:
-                            _completion(NO);
-                            break;
-                        case LAErrorPasscodeNotSet:
-                        case LAErrorTouchIDNotEnrolled:
-                        case LAErrorTouchIDNotAvailable:
-                        case LAErrorUserFallback:
-                            [self openPasscodeWithMode:1 viewController:viewController];
-                            break;
-                    }
-                } else {
-                    _completion(success);
-                }
-            });
-        }];
-    } else {
+    _verification = verification;
+//    LAContext* context = [[LAContext alloc] init];
+//    if ([context canEvaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics error:nil]) {
+//        [context evaluatePolicy:LAPolicyDeviceOwnerAuthenticationWithBiometrics localizedReason:NSLocalizedString(@"dmpasscode_touchid_reason", nil) reply:^(BOOL success, NSError* error) {
+//            dispatch_async(dispatch_get_main_queue(), ^{
+//                if (error) {
+//                    switch (error.code) {
+//                        case LAErrorUserCancel:
+//                        case LAErrorSystemCancel:
+//                        case LAErrorAuthenticationFailed:
+//                            _completion(NO);
+//                            break;
+//                        case LAErrorPasscodeNotSet:
+//                        case LAErrorTouchIDNotEnrolled:
+//                        case LAErrorTouchIDNotAvailable:
+//                        case LAErrorUserFallback:
+//                            [self openPasscodeWithMode:1 viewController:viewController];
+//                            break;
+//                    }
+//                } else {
+//                    _completion(success);
+//                }
+//            });
+//        }];
+//    } else {
         // no touch id available
         [self openPasscodeWithMode:1 viewController:viewController];
-    }
+//    }
 }
 
 - (void)removePasscode {
@@ -123,6 +131,10 @@ static NSBundle* bundle;
 - (BOOL)isPasscodeSet {
     BOOL ret = [[DMKeychain defaultKeychain] objectForKey:KEYCHAIN_NAME] != nil;
     return ret;
+}
+
+- (NSString *)getPasscode {
+    return [[DMKeychain defaultKeychain] objectForKey:KEYCHAIN_NAME];
 }
 
 - (void)setConfig:(DMPasscodeConfig *)config {
@@ -170,15 +182,30 @@ static NSBundle* bundle;
             }
         }
     } else if (_mode == 1) {
-        if ([code isEqualToString:[[DMKeychain defaultKeychain] objectForKey:KEYCHAIN_NAME]]) {
-            [self closeAndNotify:YES];
-        } else {
-            [_passcodeViewController setErrorMessage:[NSString stringWithFormat:NSLocalizedString(@"dmpasscode_n_left", nil), 2 - _count]];
-            [_passcodeViewController reset];
-            if (_count >= 2) { // max 3 attempts
-                [self closeAndNotify:NO];
-            }
-        }
+        [MBProgressHUD showHUDAddedTo:_passcodeViewController.view animated:YES];
+
+        int countState = _count;
+        _verification(code,
+                // Completion
+                ^(BOOL verified) {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        [MBProgressHUD hideHUDForView:_passcodeViewController.view animated:YES];
+
+                        if (verified) {
+                            [self closeAndNotify:YES];
+                        } else {
+                            [_passcodeViewController setErrorMessage:[NSString stringWithFormat:NSLocalizedString(@"dmpasscode_n_left", nil), 2 - countState]];
+                            [_passcodeViewController reset];
+                            if (countState >= 2) { // max 3 attempts
+                                [self closeAndNotify:NO];
+                            }
+                        }
+                    });
+                },
+                // Fatal failure (i.e. disconnected)
+                ^{
+                    [self closeAndNotify:NO];
+                });
     }
     _count++;
 }

@@ -6,6 +6,7 @@
 //
 //
 
+//#import <Colours/Colours.h>
 #import "DMPasscodeInternalViewController.h"
 #import "DMPasscodeInternalField.h"
 #import "DMPasscodeConfig.h"
@@ -44,7 +45,22 @@
     self.navigationController.navigationBar.titleTextAttributes = @{NSFontAttributeName :_config.navigationBarFont,
                                                                     NSForegroundColorAttributeName: _config.navigationBarTitleColor};
     self.title = _config.navigationBarTitle;
-    
+
+//    self.navigationItem.title = _config.navigationBarTitle;
+
+    UINavigationBar *navigationBar = self.navigationController.navigationBar;
+//    [navigationBar setBarTintColor:[UIColor colorFromHexString:@"#AB3DAB"]];
+    [navigationBar setTranslucent:NO];
+//    [navigationBar setTitleTextAttributes:@{
+//            NSForegroundColorAttributeName : [UIColor whiteColor],
+//            NSFontAttributeName : [UIFont fontWithName:@"AvenirNext-Regular"
+//                                                  size:20.0]}];
+    [navigationBar.backItem.backBarButtonItem setTitleTextAttributes:@{
+                    NSForegroundColorAttributeName : [UIColor whiteColor],
+                    NSFontAttributeName : [UIFont fontWithName:@"AvenirNext-Regular"
+                                                          size:20.0]}
+                                                            forState:UIControlStateNormal];
+
     _instructions.frame = CGRectMake(0, 85, self.view.frame.size.width, 30);
     _instructions.font = _config.instructionsFont;
     _instructions.textColor = _config.descriptionColor;
