@@ -92,7 +92,7 @@ static NSBundle* bundle;
 }
 
 - (void)showPasscodeInViewController:(UIViewController *)viewController withVerification:(PasscodeVerificationBlock)verification completion:(PasscodeCompletionBlock)completion {
-    NSAssert([self isPasscodeSet], @"No passcode set");
+//    NSAssert([self isPasscodeSet], @"No passcode set");
     _completion = completion;
     _verification = verification;
 //    LAContext* context = [[LAContext alloc] init];
