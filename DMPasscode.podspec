@@ -16,5 +16,5 @@ Pod::Spec.new do |s|
   s.resource_bundles = { 'DMPasscode' => 'Pod/Assets/*.lproj' }
 
   s.public_header_files = 'Pod/Classes/DMPasscode.h', 'Pod/Classes/DMPasscodeConfig.h'
-  s.frameworks = 'UIKit', 'Security', 'LocalAuthentication'
+  s.frameworks = 'UIKit', 'Security'
 end
