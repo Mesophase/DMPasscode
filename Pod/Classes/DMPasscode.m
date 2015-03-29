@@ -11,9 +11,9 @@
 #import "DMPasscodeInternalViewController.h"
 #import "DMKeychain.h"
 
-#ifdef __IPHONE_8_0
-#import <LocalAuthentication/LocalAuthentication.h>
-#endif
+//#ifdef __IPHONE_8_0
+//#import <LocalAuthentication/LocalAuthentication.h>
+//#endif
 #import <MBProgressHUD/MBProgressHUD.h>
 
 #undef NSLocalizedString

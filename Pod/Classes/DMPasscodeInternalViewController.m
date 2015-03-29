@@ -57,8 +57,8 @@
 //                                                  size:20.0]}];
     [navigationBar.backItem.backBarButtonItem setTitleTextAttributes:@{
                     NSForegroundColorAttributeName : [UIColor whiteColor],
-                    NSFontAttributeName : [UIFont fontWithName:@"AvenirNext-Regular"
-                                                          size:20.0]}
+                    NSFontAttributeName : [UIFont fontWithName:@"AvenirNext-Medium"
+                                                          size:17.0]}
                                                             forState:UIControlStateNormal];
 
     _instructions.frame = CGRectMake(0, 85, self.view.frame.size.width, 30);
